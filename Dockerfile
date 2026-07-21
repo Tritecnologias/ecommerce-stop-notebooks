@@ -1,18 +1,18 @@
 # ─── Build stage ───────────────────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Instala dependências
+# Instala TODAS as dependências (incluindo devDependencies para build)
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 
 # Copia código-fonte e faz build
 COPY . .
 RUN npm run build
 
 # ─── Production stage ──────────────────────────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
