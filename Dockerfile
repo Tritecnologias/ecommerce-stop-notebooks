@@ -19,10 +19,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copia apenas o output do build
-COPY --from=builder /app/.output .output
+# Copia o output do build (TanStack Start gera em dist/)
+COPY --from=builder /app/dist dist
 COPY --from=builder /app/package.json .
 
 EXPOSE 3000
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "dist/server/server.js"]
