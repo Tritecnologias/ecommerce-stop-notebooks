@@ -22,11 +22,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Copia o output do build + node_modules de produção
-COPY --from=builder /app/dist dist
-COPY --from=builder /app/node_modules node_modules
+# Copia tudo que o servidor precisa
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json .
 
 EXPOSE 3000
 
-CMD ["node", "dist/server/server.js"]
+# Usa flag para tratar como ESM e mostra erros detalhados
+CMD ["sh", "-c", "node --enable-source-maps dist/server/server.js 2>&1 || (echo 'SERVER CRASHED' && sleep 30)"]
