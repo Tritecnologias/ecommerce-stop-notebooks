@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { Profile } from "./types";
-import { serverLogin, serverRegister } from "@/fns/auth";
 
 type AuthCtx = {
   user: User | null;
@@ -51,21 +50,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const result = await serverLogin({ data: { email, password } });
-    if (result.error) return { error: result.error };
-    if (result.session) {
-      await supabase.auth.setSession(result.session);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await res.json();
+      if (result.error) return { error: result.error };
+      if (result.session) {
+        await supabase.auth.setSession(result.session);
+      }
+      return { error: null };
+    } catch (e) {
+      return { error: "Erro de conexão" };
     }
-    return { error: null };
   }
 
   async function register(name: string, email: string, password: string) {
-    const result = await serverRegister({ data: { name, email, password } });
-    if (result.error) return { error: result.error };
-    if (result.session) {
-      await supabase.auth.setSession(result.session);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const result = await res.json();
+      if (result.error) return { error: result.error };
+      if (result.session) {
+        await supabase.auth.setSession(result.session);
+      }
+      return { error: null };
+    } catch (e) {
+      return { error: "Erro de conexão" };
     }
-    return { error: null };
   }
 
   async function logout() {
