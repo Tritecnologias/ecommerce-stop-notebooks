@@ -84,6 +84,55 @@ const server = createServer(async (req, res) => {
   // Try static files first
   if (tryServeStatic(req, res)) return;
 
+  // Custom API endpoints (bypass TanStack Start handler)
+  if (req.url?.startsWith("/api/auth/")) {
+    try {
+      const url = new URL(req.url, `http://localhost`);
+      const bodyRaw = await new Promise((resolve) => {
+        const chunks = [];
+        req.on("data", (chunk) => chunks.push(chunk));
+        req.on("end", () => resolve(Buffer.concat(chunks).toString()));
+      });
+      const body = JSON.parse(bodyRaw);
+
+      const supabaseUrl = process.env.SUPABASE_URL || "";
+      const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
+
+      const { createClient } = await import("@supabase/supabase-js");
+      const supabase = createClient(supabaseUrl, anonKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+
+      let result;
+      if (url.pathname === "/api/auth/login") {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: body.email,
+          password: body.password,
+        });
+        result = error ? { error: error.message, session: null } : { error: null, session: data.session };
+      } else if (url.pathname === "/api/auth/register") {
+        const { data, error } = await supabase.auth.signUp({
+          email: body.email,
+          password: body.password,
+          options: { data: { name: body.name } },
+        });
+        result = error ? { error: error.message, session: null } : { error: null, session: data.session };
+      } else {
+        res.writeHead(404);
+        res.end("Not Found");
+        return;
+      }
+
+      res.writeHead(result.error ? 401 : 200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(result));
+      return;
+    } catch (e) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Erro interno", session: null }));
+      return;
+    }
+  }
+
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
     const headers = new Headers();
