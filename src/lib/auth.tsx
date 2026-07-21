@@ -59,7 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await res.json();
       if (result.error) return { error: result.error };
       if (result.session) {
-        await supabase.auth.setSession(result.session);
+        // Store session directly in localStorage (avoid CORS call to Supabase)
+        const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL || "http://localhost").hostname.split(".")[0]}-auth-token`;
+        localStorage.setItem(storageKey, JSON.stringify(result.session));
+        // Update local state
+        setSession(result.session);
+        setUser(result.session.user);
+        if (result.session.user) await loadProfile(result.session.user.id);
       }
       return { error: null };
     } catch (e) {
@@ -77,7 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await res.json();
       if (result.error) return { error: result.error };
       if (result.session) {
-        await supabase.auth.setSession(result.session);
+        const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL || "http://localhost").hostname.split(".")[0]}-auth-token`;
+        localStorage.setItem(storageKey, JSON.stringify(result.session));
+        setSession(result.session);
+        setUser(result.session.user);
+        if (result.session.user) await loadProfile(result.session.user.id);
       }
       return { error: null };
     } catch (e) {
