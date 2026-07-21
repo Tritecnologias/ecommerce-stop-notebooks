@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import type { Profile } from "./types";
+import { serverLogin, serverRegister } from "@/fns/auth";
 
 type AuthCtx = {
   user: User | null;
@@ -50,17 +51,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    const result = await serverLogin({ data: { email, password } });
+    if (result.error) return { error: result.error };
+    if (result.session) {
+      await supabase.auth.setSession(result.session);
+    }
+    return { error: null };
   }
 
   async function register(name: string, email: string, password: string) {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name } },
-    });
-    return { error: error?.message ?? null };
+    const result = await serverRegister({ data: { name, email, password } });
+    if (result.error) return { error: result.error };
+    if (result.session) {
+      await supabase.auth.setSession(result.session);
+    }
+    return { error: null };
   }
 
   async function logout() {
