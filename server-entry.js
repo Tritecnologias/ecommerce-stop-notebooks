@@ -27,7 +27,7 @@ const server = createServer(async (req, res) => {
       duplex: "half",
     });
 
-    const response = await handler.fetch(request);
+    const response = await (typeof handler === "function" ? handler(request) : handler.fetch(request));
 
     res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
 
