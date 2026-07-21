@@ -11,7 +11,7 @@ function createSupabaseAuth() {
   });
 }
 
-export const serverLogin = createServerFn()
+export const serverLogin = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({
       email: z.string().email(),
@@ -28,7 +28,7 @@ export const serverLogin = createServerFn()
     return { error: null, session: authData.session };
   });
 
-export const serverRegister = createServerFn()
+export const serverRegister = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.object({
       name: z.string().min(1),
