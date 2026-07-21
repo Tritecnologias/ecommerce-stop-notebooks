@@ -26,8 +26,8 @@ ENV PORT=3000
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json .
+COPY --from=builder /app/server-entry.js .
 
 EXPOSE 3000
 
-# Usa flag para tratar como ESM e mostra erros detalhados
-CMD ["sh", "-c", "node --enable-source-maps dist/server/server.js 2>&1 || (echo 'SERVER CRASHED' && sleep 30)"]
+CMD ["node", "server-entry.js"]
