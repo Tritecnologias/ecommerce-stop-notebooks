@@ -107,6 +107,11 @@ const server = createServer(async (req, res) => {
       duplex: "half",
     });
 
+    // Debug: log server function calls
+    if (url.pathname.includes("_server")) {
+      console.log(`[server-fn] ${req.method} ${url.pathname}`);
+    }
+
     const response = await (typeof handler === "function" ? handler(request) : handler.fetch(request));
 
     res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
