@@ -49,7 +49,7 @@ export function CartDrawer() {
             <div className="flex-1 overflow-y-auto px-5 py-4">
               <ul className="space-y-4">
                 {detailed.map(({ item, product, lineTotal }) => (
-                  <li key={`${item.productId}-${item.size}`} className="flex gap-3">
+                  <li key={`${item.slug}-${item.size}`} className="flex gap-3">
                     <img src={product.images[0]} alt={product.name} className="h-20 w-20 flex-none rounded-md object-cover" />
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
@@ -57,15 +57,15 @@ export function CartDrawer() {
                           <p className="text-sm font-semibold leading-tight">{product.name}</p>
                           <p className="text-xs text-muted-foreground">{item.size}</p>
                         </div>
-                        <button onClick={() => remove(item.productId, item.size)} className="text-muted-foreground hover:text-destructive" aria-label="Remover">
+                        <button onClick={() => remove(item.slug, item.size)} className="text-muted-foreground hover:text-destructive" aria-label="Remover">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                       <div className="mt-auto flex items-center justify-between">
                         <div className="inline-flex items-center rounded-md border border-border">
-                          <button onClick={() => setQty(item.productId, item.size, item.quantity - 1)} className="px-2 py-1 hover:bg-secondary" aria-label="-"><Minus className="h-3 w-3" /></button>
+                          <button onClick={() => setQty(item.slug, item.size, item.quantity - 1)} className="px-2 py-1 hover:bg-secondary" aria-label="-"><Minus className="h-3 w-3" /></button>
                           <span className="min-w-8 text-center text-sm">{item.quantity}</span>
-                          <button onClick={() => setQty(item.productId, item.size, item.quantity + 1)} className="px-2 py-1 hover:bg-secondary" aria-label="+"><Plus className="h-3 w-3" /></button>
+                          <button onClick={() => setQty(item.slug, item.size, item.quantity + 1)} className="px-2 py-1 hover:bg-secondary" aria-label="+"><Plus className="h-3 w-3" /></button>
                         </div>
                         <p className="text-sm font-bold text-neon">{formatBRL(lineTotal)}</p>
                       </div>

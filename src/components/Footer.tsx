@@ -16,16 +16,19 @@ export function Footer() {
           <div>
             <h4 className="text-sm font-semibold">Loja</h4>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-neon">Coleção</a></li>
-              <li><a href="#" className="hover:text-neon">Novidades</a></li>
+              <li><a href="#" className="hover:text-neon">Vibradores</a></li>
+              <li><a href="#" className="hover:text-neon">Lingeries</a></li>
+              <li><a href="#" className="hover:text-neon">Cosméticos</a></li>
               <li><a href="#" className="hover:text-neon">Mais vendidos</a></li>
             </ul>
           </div>
           <div>
             <h4 className="text-sm font-semibold">Ajuda</h4>
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-neon">Entrega</a></li>
+              <li><a href="/faq" className="hover:text-neon">Perguntas frequentes</a></li>
+              <li><a href="/faq" className="hover:text-neon">Entrega discreta</a></li>
               <li><a href="#" className="hover:text-neon">Trocas e devoluções</a></li>
+              <li><a href="/privacidade" className="hover:text-neon">Política de privacidade</a></li>
               <li><a href="#" className="hover:text-neon">Contato</a></li>
             </ul>
           </div>
@@ -41,8 +44,8 @@ export function Footer() {
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-6 text-xs text-muted-foreground">
           <div className="flex flex-wrap items-center gap-4">
-            <span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-neon" /> Site seguro</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-neon" /> Compra protegida</span>
+            <span className="inline-flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-neon" /> Embalagem discreta</span>
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-neon" /> Sigilo no cartão</span>
             <span className="inline-flex items-center gap-1.5"><Truck className="h-3.5 w-3.5 text-neon" /> Envio em 24h</span>
             <span className="inline-flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-neon" /> Parcelado em até 6x</span>
           </div>

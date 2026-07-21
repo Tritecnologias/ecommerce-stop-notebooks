@@ -10,9 +10,15 @@ import {
 
 import appCss from "../styles.css?url";
 import { CartProvider } from "@/lib/cart";
+import { AuthProvider } from "@/lib/auth";
+import { OrderNotifProvider } from "@/lib/order-notifications";
 import { CartDrawer } from "@/components/CartDrawer";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { WhatsAppFloat } from "@/components/WhatsAppFloat";
+import { AgeVerification } from "@/components/AgeVerification";
+import { BossMode } from "@/components/BossMode";
+import { Toaster } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -55,11 +61,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BodySplashers — Aromas que marcam" },
-      { name: "description", content: "Body splashes premium com fixação prolongada. Entrega rápida em todo Brasil." },
-      { property: "og:title", content: "BodySplashers — Aromas que marcam" },
-      { property: "og:description", content: "Body splashes premium com fixação prolongada." },
+      { title: "Secret Desire — Prazer com discrição" },
+      { name: "description", content: "Produtos eróticos selecionados para casais e solo. Embalagem 100% discreta. Entrega sigilosa em todo Brasil." },
+      { property: "og:title", content: "Secret Desire — Prazer com discrição" },
+      { property: "og:description", content: "Produtos eróticos selecionados. Embalagem discreta garantida." },
       { property: "og:type", content: "website" },
+      { name: "rating", content: "adult" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -90,14 +97,22 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main className="flex-1"><Outlet /></main>
-          <Footer />
-        </div>
-        <CartDrawer />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <OrderNotifProvider>
+          <div className="flex min-h-screen flex-col">
+            <Header />
+            <main className="flex-1"><Outlet /></main>
+            <Footer />
+          </div>
+          <CartDrawer />
+          <WhatsAppFloat />
+          <AgeVerification />
+          <BossMode />
+          <Toaster richColors position="top-right" />
+          </OrderNotifProvider>
+        </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

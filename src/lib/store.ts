@@ -1,7 +1,7 @@
 export const STORE = {
-  name: "BodySplashers",
-  tagline: "Aromas que marcam. Entrega rápida.",
+  name: "Secret Desire",
+  tagline: "Prazer com discrição. Entrega sigilosa.",
   description:
-    "Body splashes premium para quem quer marcar presença. Fragrâncias autorais, fixação prolongada.",
-  shipping: { freeFrom: 149, flatRate: 19.9 },
+    "Produtos eróticos selecionados para casais e solo. Embalagem 100% discreta garantida.",
+  shipping: { freeFrom: 199, flatRate: 19.9 },
 };
