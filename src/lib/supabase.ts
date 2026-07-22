@@ -1,7 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+// No browser: usa proxy local (/supabase -> Kong interno via server-entry.js)
+// No servidor (SSR): usa a URL interna Docker diretamente
+const isBrowser = typeof window !== "undefined";
+const supabaseUrl = isBrowser
+  ? (window.location.origin + "/supabase")
+  : (process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL) as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
 // Cliente público (browser) — usa anon key, respeita RLS
