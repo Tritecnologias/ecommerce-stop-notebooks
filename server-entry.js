@@ -84,6 +84,53 @@ const server = createServer(async (req, res) => {
   // Try static files first
   if (tryServeStatic(req, res)) return;
 
+  // Supabase proxy — all client-side Supabase calls go through here to avoid CORS
+  if (req.url?.startsWith("/supabase/")) {
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || "";
+      const targetPath = req.url.replace("/supabase/", "/");
+      const targetUrl = supabaseUrl + targetPath;
+
+      const headers = { ...req.headers };
+      delete headers.host;
+      delete headers.connection;
+
+      const bodyChunks = [];
+      req.on("data", (chunk) => bodyChunks.push(chunk));
+      await new Promise((resolve) => req.on("end", resolve));
+      const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : undefined;
+
+      const proxyRes = await fetch(targetUrl, {
+        method: req.method,
+        headers,
+        body: req.method !== "GET" && req.method !== "HEAD" ? body : undefined,
+      });
+
+      const resHeaders = {};
+      proxyRes.headers.forEach((value, key) => { resHeaders[key] = value; });
+      // Add CORS headers
+      resHeaders["access-control-allow-origin"] = "*";
+      resHeaders["access-control-allow-methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+      resHeaders["access-control-allow-headers"] = "Authorization, Content-Type, apikey, x-client-info";
+
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, resHeaders);
+        res.end();
+        return;
+      }
+
+      res.writeHead(proxyRes.status, resHeaders);
+      const responseBody = await proxyRes.arrayBuffer();
+      res.end(Buffer.from(responseBody));
+      return;
+    } catch (e) {
+      console.error("[supabase-proxy] Error:", e.message);
+      res.writeHead(502, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Proxy error" }));
+      return;
+    }
+  }
+
   // Custom API endpoints (bypass TanStack Start handler)
   if (req.url?.startsWith("/api/auth/")) {
     try {
