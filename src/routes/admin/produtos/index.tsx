@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Package, AlertTriangle, CheckCircle2, Star, Heart } from "lucide-react";
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Package, AlertTriangle, CheckCircle2, Star, Heart, FileUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getAdminProducts, deleteProduct, updateProduct, adjustStock } from "@/fns/products";
 import { getTopWishlisted } from "@/fns/wishlist";
@@ -375,12 +375,20 @@ function AdminProducts() {
             {opt.label}
           </button>
         ))}
-        <Link
-          to="/admin/produtos/novo"
-          className="ml-auto inline-flex items-center gap-2 rounded-md bg-neon px-4 py-2.5 text-sm font-bold text-primary-foreground glow transition-transform hover:scale-[1.01]"
-        >
-          <Plus className="h-4 w-4" /> Novo produto
-        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            to="/admin/produtos/importar"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium hover:border-neon hover:text-neon transition-colors"
+          >
+            <FileUp className="h-4 w-4" /> Importar CSV
+          </Link>
+          <Link
+            to="/admin/produtos/novo"
+            className="inline-flex items-center gap-2 rounded-md bg-neon px-4 py-2.5 text-sm font-bold text-primary-foreground glow transition-transform hover:scale-[1.01]"
+          >
+            <Plus className="h-4 w-4" /> Novo produto
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-lg border border-border bg-card overflow-hidden">

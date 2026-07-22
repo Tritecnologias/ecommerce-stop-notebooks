@@ -283,3 +283,40 @@ export const getStockLogs = createServerFn()
     if (error) throw new Error(error.message);
     return (rows ?? []) as StockLog[];
   });
+
+// ─── Importação em lote (CSV Magento) ────────────────────────────────────────
+
+const ImportProductRow = z.object({
+  slug: z.string().min(1).max(500),
+  name: z.string().min(1).max(500),
+  short_description: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  price: z.number().positive(),
+  old_price: z.number().positive().nullable().optional(),
+  category: z.string().nullable().optional(),
+  tag: z.enum(["Mais Vendido", "Lançamento", "Frete Grátis"]).nullable().optional(),
+  notes: z.array(z.string()).default([]),
+  sizes: z.array(z.string()).default([]),
+  images: z.array(z.string()).default([]),
+  rating: z.number().min(0).max(5).default(0),
+  review_count: z.number().int().min(0).default(0),
+  stock: z.number().int().min(0).default(0),
+  active: z.boolean().default(true),
+  meta_title: z.string().nullable().optional(),
+  meta_description: z.string().nullable().optional(),
+  og_image: z.string().nullable().optional(),
+  for_whom: z.enum(["ela", "ele", "casal", "todos"]).nullable().optional(),
+  experience_level: z.enum(["iniciante", "intermediario", "avancado"]).nullable().optional(),
+});
+
+export const batchImportProducts = createServerFn()
+  .inputValidator((input: unknown) =>
+    z.array(ImportProductRow).min(1).max(500).parse(input),
+  )
+  .handler(async ({ data: products }) => {
+    const db = createSupabaseAdmin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await db.from("products").upsert(products as any[], { onConflict: "slug" });
+    if (error) throw new Error(error.message);
+    return { count: products.length };
+  });
