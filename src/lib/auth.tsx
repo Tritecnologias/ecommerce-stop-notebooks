@@ -59,10 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await res.json();
       if (result.error) return { error: result.error };
       if (result.session) {
-        // Store session directly in localStorage (avoid CORS call to Supabase)
-        const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL || "http://localhost").hostname.split(".")[0]}-auth-token`;
-        localStorage.setItem(storageKey, JSON.stringify(result.session));
-        // Update local state
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
         setSession(result.session);
         setUser(result.session.user);
         if (result.session.user) await loadProfile(result.session.user.id);
@@ -83,8 +83,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await res.json();
       if (result.error) return { error: result.error };
       if (result.session) {
-        const storageKey = `sb-${new URL(import.meta.env.VITE_SUPABASE_URL || "http://localhost").hostname.split(".")[0]}-auth-token`;
-        localStorage.setItem(storageKey, JSON.stringify(result.session));
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
         setSession(result.session);
         setUser(result.session.user);
         if (result.session.user) await loadProfile(result.session.user.id);
