@@ -1,9 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Package, AlertTriangle, CheckCircle2, Star, Heart, FileUp } from "lucide-react";
+import {
+  Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Package,
+  AlertTriangle, CheckCircle2, Star, Heart, FileUp, Search,
+  ChevronLeft, ChevronRight,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { getAdminProducts, deleteProduct, updateProduct, adjustStock } from "@/fns/products";
+import {
+  getAdminProductsPaged, getAdminProductStats,
+  deleteProduct, updateProduct, adjustStock,
+} from "@/fns/products";
 import { getTopWishlisted } from "@/fns/wishlist";
 import { StockMovements } from "./-stock-movements";
 import { formatBRL } from "@/lib/cart";
@@ -17,7 +24,6 @@ export const Route = createFileRoute("/admin/produtos/")({
 
 // ─── Nível de estoque ───────────────────────────────────────────────────────
 function stockLevel(stock: number): "critical" | "low" | "ok" {
-  if (stock === 0) return "critical";
   if (stock < 5) return "critical";
   if (stock < 10) return "low";
   return "ok";
@@ -39,19 +45,16 @@ const stockIcon = {
 function StockCell({ product }: { product: { id: string; name: string; stock: number } }) {
   const { user, profile } = useAuth();
   const [editing, setEditing] = useState(false);
-  // Estado local otimista — sincroniza com o prop quando não está editando
   const [localStock, setLocalStock] = useState(product.stock);
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
-  // Sincroniza quando o DB retorna novo valor (após invalidação)
   useEffect(() => {
     if (!editing) setLocalStock(product.stock);
   }, [product.stock, editing]);
 
   const level = stockLevel(localStock);
-
   const adminName = profile?.name ?? user?.email ?? undefined;
 
   const saveMut = useMutation({
@@ -61,10 +64,11 @@ function StockCell({ product }: { product: { id: string; name: string; stock: nu
     onSuccess: (_result, stock) => {
       setLocalStock(stock);
       qc.invalidateQueries({ queryKey: ["admin-products"] });
+      qc.invalidateQueries({ queryKey: ["admin-product-stats"] });
       toast.success(`Estoque: ${stock} un.`);
     },
     onError: (err) => {
-      setLocalStock(product.stock); // rollback
+      setLocalStock(product.stock);
       toast.error(err instanceof Error ? err.message : "Erro ao atualizar estoque");
     },
   });
@@ -81,8 +85,8 @@ function StockCell({ product }: { product: { id: string; name: string; stock: nu
     const n = parseInt(inputValue, 10);
     setEditing(false);
     if (isNaN(n) || n < 0) { toast.error("Valor inválido"); return; }
-    if (n === localStock) return; // sem mudança
-    setLocalStock(n); // otimista
+    if (n === localStock) return;
+    setLocalStock(n);
     saveMut.mutate(n);
   };
 
@@ -95,7 +99,7 @@ function StockCell({ product }: { product: { id: string; name: string; stock: nu
     if (saveMut.isPending) return;
     const n = Math.max(0, localStock + delta);
     if (n === localStock) return;
-    setLocalStock(n); // otimista
+    setLocalStock(n);
     saveMut.mutate(n);
   };
 
@@ -119,7 +123,6 @@ function StockCell({ product }: { product: { id: string; name: string; stock: nu
 
   return (
     <div className="flex items-center gap-2">
-      {/* Badge clicável */}
       <button
         onClick={startEdit}
         disabled={saveMut.isPending}
@@ -129,8 +132,6 @@ function StockCell({ product }: { product: { id: string; name: string; stock: nu
         {stockIcon[level]}
         {saveMut.isPending ? "…" : `${localStock} un`}
       </button>
-
-      {/* Ajuste rápido */}
       <div className="flex items-center gap-0.5">
         <button
           onClick={() => adjust(-1)}
@@ -195,19 +196,16 @@ function TagCell({ product }: { product: { id: string; tag?: string | null } }) 
 }
 
 // ─── Resumo de estoque ───────────────────────────────────────────────────────
-function StockSummary({ products }: { products: { stock: number; active: boolean }[] }) {
-  const active = products.filter((p) => p.active);
-  const critical = active.filter((p) => p.stock < 5).length;
-  const low = active.filter((p) => p.stock >= 5 && p.stock < 10).length;
-  const ok = active.filter((p) => p.stock >= 10).length;
-  const total = active.reduce((s, p) => s + p.stock, 0);
-
+function StockSummary({ stats }: {
+  stats?: { total: number; totalUnits: number; critical: number; low: number; ok: number };
+}) {
+  if (!stats) return null;
   return (
     <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <SummaryCard icon={Package} label="Total em estoque" value={`${total} un`} color="text-foreground" />
-      <SummaryCard icon={CheckCircle2} label="Estoque ok" value={String(ok)} color="text-green-400" />
-      <SummaryCard icon={AlertTriangle} label="Estoque baixo" value={String(low)} color="text-yellow-400" />
-      <SummaryCard icon={AlertTriangle} label="Crítico / Zerado" value={String(critical)} color="text-destructive" />
+      <SummaryCard icon={Package} label="Total em estoque" value={`${stats.totalUnits} un`} color="text-foreground" />
+      <SummaryCard icon={CheckCircle2} label="Estoque ok" value={String(stats.ok)} color="text-green-400" />
+      <SummaryCard icon={AlertTriangle} label="Estoque baixo" value={String(stats.low)} color="text-yellow-400" />
+      <SummaryCard icon={AlertTriangle} label="Crítico / Zerado" value={String(stats.critical)} color="text-destructive" />
     </div>
   );
 }
@@ -264,7 +262,6 @@ function WishlistDemand() {
                   key={item.product_id}
                   className="flex items-center gap-3 rounded-md border border-border bg-secondary/20 p-2.5"
                 >
-                  {/* Ranking */}
                   <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-bold ${
                     i === 0 ? "bg-yellow-500/20 text-yellow-400" :
                     i === 1 ? "bg-zinc-400/20 text-zinc-400" :
@@ -273,19 +270,11 @@ function WishlistDemand() {
                   }`}>
                     {i + 1}
                   </span>
-
-                  {/* Imagem */}
                   {item.product_image ? (
-                    <img
-                      src={item.product_image}
-                      alt=""
-                      className="h-9 w-9 flex-none rounded-md object-cover"
-                    />
+                    <img src={item.product_image} alt="" className="h-9 w-9 flex-none rounded-md object-cover" />
                   ) : (
                     <div className="h-9 w-9 flex-none rounded-md bg-secondary" />
                   )}
-
-                  {/* Info */}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-semibold leading-tight">{item.product_name}</p>
                     <div className="mt-0.5 flex items-center gap-1">
@@ -303,12 +292,83 @@ function WishlistDemand() {
   );
 }
 
+// ─── Paginação ────────────────────────────────────────────────────────────────
+function Pagination({
+  page, totalPages, total, pageSize, onPage,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onPage: (p: number) => void;
+}) {
+  const from = (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <p className="text-xs text-muted-foreground">
+        Mostrando <span className="font-semibold text-foreground">{from}–{to}</span> de{" "}
+        <span className="font-semibold text-foreground">{total.toLocaleString("pt-BR")}</span> produtos
+      </p>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onPage(page - 1)}
+          disabled={page === 1}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-neon hover:text-neon disabled:opacity-30 transition"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        {/* Janela de páginas */}
+        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+          let p: number;
+          if (totalPages <= 5) {
+            p = i + 1;
+          } else if (page <= 3) {
+            p = i + 1;
+          } else if (page >= totalPages - 2) {
+            p = totalPages - 4 + i;
+          } else {
+            p = page - 2 + i;
+          }
+          return (
+            <button
+              key={p}
+              onClick={() => onPage(p)}
+              className={`flex h-8 w-8 items-center justify-center rounded-md border text-xs font-semibold transition ${
+                p === page
+                  ? "border-neon bg-neon/10 text-neon"
+                  : "border-border text-muted-foreground hover:border-neon hover:text-neon"
+              }`}
+            >
+              {p}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => onPage(page + 1)}
+          disabled={page >= totalPages}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground hover:border-neon hover:text-neon disabled:opacity-30 transition"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Página principal ────────────────────────────────────────────────────────
+const PAGE_SIZE = 50;
+
 function AdminProducts() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+
   const [tagFilter, setTagFilter] = useState<string>("all");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!loading) {
@@ -317,21 +377,49 @@ function AdminProducts() {
     }
   }, [user, profile, loading, navigate]);
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["admin-products"],
-    queryFn: () => getAdminProducts(),
-    enabled: !!user && profile?.role === "admin",
+  // Debounce da busca
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput); setPage(1); }, 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // Volta para página 1 ao mudar filtro
+  useEffect(() => { setPage(1); }, [tagFilter]);
+
+  const enabled = !!user && profile?.role === "admin";
+
+  const { data: stats } = useQuery({
+    queryKey: ["admin-product-stats"],
+    queryFn: () => getAdminProductStats(),
+    enabled,
+    staleTime: 60_000,
   });
 
-  const filteredProducts = (products ?? []).filter((p) => {
-    if (tagFilter === "all") return true;
-    if (tagFilter === "none") return !p.tag;
-    return p.tag === tagFilter;
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["admin-products", page, PAGE_SIZE, search, tagFilter],
+    queryFn: () => getAdminProductsPaged({
+      data: {
+        page,
+        pageSize: PAGE_SIZE,
+        search: search || undefined,
+        tag: tagFilter === "all" ? undefined : tagFilter,
+      },
+    }),
+    enabled,
+    placeholderData: (prev) => prev,
   });
+
+  const products = data?.products ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteProduct({ data: id }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-products"] }); toast.success("Produto excluído"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-products"] });
+      qc.invalidateQueries({ queryKey: ["admin-product-stats"] });
+      toast.success("Produto excluído");
+    },
     onError: () => toast.error("Erro ao excluir produto"),
   });
 
@@ -345,18 +433,16 @@ function AdminProducts() {
 
   return (
     <AdminLayout title="Produtos">
-      {/* Resumo de estoque */}
-      {products && products.length > 0 && <StockSummary products={products} />}
+      <StockSummary stats={stats} />
 
-      {/* Mais desejados */}
       <WishlistDemand />
 
-      {/* Movimentações recentes */}
       <div className="mb-6">
         <StockMovements />
       </div>
 
-      <div className="mb-5 flex flex-wrap items-center gap-2">
+      {/* Filtros + busca */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <Star className="h-4 w-4 text-muted-foreground flex-none" />
         {[
           { value: "all", label: "Todos" },
@@ -375,6 +461,19 @@ function AdminProducts() {
             {opt.label}
           </button>
         ))}
+
+        {/* Busca */}
+        <div className="relative ml-2">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, slug ou categoria…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="h-8 w-64 rounded-md border border-border bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:border-neon focus:outline-none"
+          />
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
           <Link
             to="/admin/produtos/importar"
@@ -391,7 +490,7 @@ function AdminProducts() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <div className={`rounded-lg border border-border bg-card overflow-hidden transition-opacity ${isFetching ? "opacity-70" : ""}`}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -413,10 +512,10 @@ function AdminProducts() {
             <tbody className="divide-y divide-border">
               {isLoading ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Carregando…</td></tr>
-              ) : filteredProducts.length === 0 ? (
+              ) : products.length === 0 ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">Nenhum produto encontrado.</td></tr>
               ) : (
-                filteredProducts.map((product) => (
+                products.map((product) => (
                   <tr key={product.id} className="hover:bg-secondary/20 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -436,19 +535,12 @@ function AdminProducts() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{product.category ?? "—"}</td>
-
-                    {/* Tag destaque inline */}
                     <td className="px-4 py-3">
                       <TagCell product={{ id: product.id, tag: product.tag }} />
                     </td>
-
-                    {/* Célula de estoque editável */}
                     <td className="px-4 py-3">
-                      <StockCell
-                        product={{ id: product.id, name: product.name, stock: product.stock }}
-                      />
+                      <StockCell product={{ id: product.id, name: product.name, stock: product.stock }} />
                     </td>
-
                     <td className="px-4 py-3">
                       <button
                         onClick={() => toggleMut.mutate({ id: product.id, active: !product.active })}
@@ -490,6 +582,16 @@ function AdminProducts() {
           </table>
         </div>
       </div>
+
+      {total > 0 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={PAGE_SIZE}
+          onPage={setPage}
+        />
+      )}
 
       {/* Legenda */}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">

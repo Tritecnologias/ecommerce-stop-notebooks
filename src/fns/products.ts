@@ -284,6 +284,61 @@ export const getStockLogs = createServerFn()
     return (rows ?? []) as StockLog[];
   });
 
+// ─── Stats de estoque (leve — só stock+active) ───────────────────────────────
+
+export const getAdminProductStats = createServerFn().handler(async () => {
+  const db = createSupabaseAdmin();
+  const { data, error } = await db.from("products").select("stock, active");
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { stock: number; active: boolean }[];
+  const active = rows.filter((r) => r.active);
+  return {
+    total: rows.length,
+    totalUnits: active.reduce((s, r) => s + r.stock, 0),
+    critical: active.filter((r) => r.stock < 5).length,
+    low: active.filter((r) => r.stock >= 5 && r.stock < 10).length,
+    ok: active.filter((r) => r.stock >= 10).length,
+  };
+});
+
+// ─── Listagem paginada com busca e filtro ─────────────────────────────────────
+
+export const getAdminProductsPaged = createServerFn()
+  .inputValidator((input: unknown) =>
+    z.object({
+      page: z.number().int().min(1).default(1),
+      pageSize: z.number().int().min(1).max(100).default(50),
+      search: z.string().optional(),
+      tag: z.string().optional(),
+    }).parse(input ?? {}),
+  )
+  .handler(async ({ data }) => {
+    const db = createSupabaseAdmin();
+    const { page, pageSize, search, tag } = data;
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    let query = db
+      .from("products")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (search?.trim()) {
+      const q = search.trim();
+      query = query.or(`name.ilike.%${q}%,slug.ilike.%${q}%,category.ilike.%${q}%`);
+    }
+    if (tag === "none") {
+      query = query.is("tag", null);
+    } else if (tag) {
+      query = query.eq("tag", tag);
+    }
+
+    const { data: products, count, error } = await query;
+    if (error) throw new Error(error.message);
+    return { products: (products ?? []) as DbProduct[], total: count ?? 0 };
+  });
+
 // ─── Importação em lote (CSV Magento) ────────────────────────────────────────
 
 const ImportProductRow = z.object({
