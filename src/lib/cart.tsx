@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useMemo, useState, type ReactNode } from "react";
-import { PRODUCTS, type Product } from "./products";
+import { PRODUCTS, dbProductToProduct, type Product } from "./products";
 import { supabase } from "./supabase";
 import { loadServerCart, syncServerCart } from "@/fns/server-cart";
+import { getProductBySlug } from "@/fns/products";
 
 export type CartItem = {
   slug: string;
@@ -38,6 +39,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
   const userIdRef = useRef<string | null>(null);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const fetchingRef = useRef<Set<string>>(new Set());
 
   // ── Hidratação local ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -105,9 +107,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, [items, hydrated]);
 
+  // Aditivo: merge ao invés de substituir, para não perder produtos já em cache
   function setProductsCache(products: Product[]) {
-    setProductsCacheState(Object.fromEntries(products.map((p) => [p.slug, p])));
+    setProductsCacheState((prev) => ({
+      ...prev,
+      ...Object.fromEntries(products.map((p) => [p.slug, p])),
+    }));
   }
+
+  // Auto-busca produtos que estão no carrinho mas não estão no cache
+  useEffect(() => {
+    if (!hydrated) return;
+    const missingSlugs = items
+      .map((i) => i.slug)
+      .filter((slug) => !productsCache[slug] && !fetchingRef.current.has(slug));
+    if (missingSlugs.length === 0) return;
+
+    missingSlugs.forEach((slug) => fetchingRef.current.add(slug));
+
+    Promise.all(missingSlugs.map((slug) => getProductBySlug({ data: slug }).catch(() => null)))
+      .then((results) => {
+        const fetched = results.filter(Boolean).map((p) => dbProductToProduct(p!));
+        if (fetched.length > 0) setProductsCache(fetched);
+      })
+      .finally(() => {
+        missingSlugs.forEach((slug) => fetchingRef.current.delete(slug));
+      });
+  }, [items, hydrated, productsCache]);
 
   const value = useMemo<CartCtx>(() => {
     const detailed = items
