@@ -18,7 +18,7 @@ const CSV_PATH = "C:/Users/Wanderson/Downloads/catalog_tendasex.csv";
 // Base URL das imagens do Magento (sem barra no final).
 // Exemplo: "https://www.tendasex.com.br/pub/media/catalog/product"
 // Se vazio, o campo `images` ficará com os caminhos relativos do Magento.
-const MAGENTO_IMAGE_BASE = "";
+const MAGENTO_IMAGE_BASE = "https://www.tendasex.com.br/media/catalog/product";
 
 // Lote de inserção — quanto maior, mais rápido; se der timeout reduza.
 const BATCH_SIZE = 100;
@@ -161,8 +161,6 @@ for (const [sku, row] of productMap) {
     meta_title:        row.meta_title?.trim()       || null,
     meta_description:  row.meta_description?.trim() || null,
     og_image:          images[0]                    || null,
-    for_whom:          null,
-    experience_level:  null,
   });
 }
 

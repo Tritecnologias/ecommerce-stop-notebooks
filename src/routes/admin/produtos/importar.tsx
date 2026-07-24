@@ -171,7 +171,7 @@ function ImportPage() {
   const navigate = useNavigate();
 
   const [stage, setStage] = useState<Stage>("idle");
-  const [imageBase, setImageBase] = useState("");
+  const [imageBase, setImageBase] = useState("https://www.tendasex.com.br/media/catalog/product");
   const [fileName, setFileName] = useState("");
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [skipped, setSkipped] = useState(0);
