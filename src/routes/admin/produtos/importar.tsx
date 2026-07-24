@@ -33,8 +33,6 @@ type ProductRow = {
   meta_title: string | null;
   meta_description: string | null;
   og_image: string | null;
-  for_whom: null;
-  experience_level: null;
 };
 
 // ─── Helpers de transformação ────────────────────────────────────────────────
@@ -149,8 +147,6 @@ function parseMagentoRows(
       meta_title: row.meta_title?.trim() || null,
       meta_description: row.meta_description?.trim() || null,
       og_image: images[0] || null,
-      for_whom: null,
-      experience_level: null,
     });
   }
 

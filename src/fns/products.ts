@@ -305,8 +305,6 @@ const ImportProductRow = z.object({
   meta_title: z.string().nullable().optional(),
   meta_description: z.string().nullable().optional(),
   og_image: z.string().nullable().optional(),
-  for_whom: z.enum(["ela", "ele", "casal", "todos"]).nullable().optional(),
-  experience_level: z.enum(["iniciante", "intermediario", "avancado"]).nullable().optional(),
 });
 
 export const batchImportProducts = createServerFn()
@@ -315,8 +313,8 @@ export const batchImportProducts = createServerFn()
   )
   .handler(async ({ data: products }) => {
     const db = createSupabaseAdmin();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await db.from("products").upsert(products as any[], { onConflict: "slug" });
+    const rows = products.map((p) => ({ ...p, updated_at: new Date().toISOString() }));
+    const { error } = await db.from("products").upsert(rows, { onConflict: "slug" });
     if (error) throw new Error(error.message);
     return { count: products.length };
   });
