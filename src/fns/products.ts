@@ -3,7 +3,6 @@ import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase";
 import type { DbProduct } from "@/lib/types";
 import { notifyStockSubscribers } from "@/fns/stock-notifications";
-import { sendLowStockAlert } from "@/fns/email";
 
 // ─── Threshold helper ─────────────────────────────────────────────────────────
 async function loadInventorySettings(db: ReturnType<typeof createSupabaseAdmin>) {
@@ -214,13 +213,10 @@ export const adjustStock = createServerFn()
     ) {
       const inv = await loadInventorySettings(db);
       if (inv.adminEmail && data.stock <= inv.threshold && data.stock > 0) {
-        sendLowStockAlert(
-          inv.adminEmail,
-          product.name,
-          product.slug ?? "",
-          data.stock,
-          inv.threshold,
-        ).catch(console.error);
+        import("@/fns/email").then(({ sendLowStockAlert }) =>
+          sendLowStockAlert(inv.adminEmail, product.name, product.slug ?? "", data.stock, inv.threshold)
+            .catch(console.error),
+        );
       }
     }
 

@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createSupabaseAdmin } from "@/lib/supabase";
-import { sendBackInStockEmail } from "@/fns/email";
 
 // ─── Inscrição do cliente ─────────────────────────────────────────────────────
 export const subscribeStockNotification = createServerFn()
@@ -73,6 +72,7 @@ export async function notifyStockSubscribers(
     await db.from("stock_notifications").update({ notified_at: now }).in("id", ids);
 
     // Envia os emails (fire-and-forget por assinante)
+    const { sendBackInStockEmail } = await import("@/fns/email");
     for (const sub of subscribers) {
       sendBackInStockEmail(sub.email, productName, productSlug).catch((e) =>
         console.error("[back-in-stock] Falha ao enviar para", sub.email, e),
