@@ -307,7 +307,7 @@ const ImportProductRow = z.object({
   og_image: z.string().nullable().optional(),
 });
 
-export const batchImportProducts = createServerFn()
+export const batchImportProducts = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
     z.array(ImportProductRow).min(1).max(500).parse(input),
   )
