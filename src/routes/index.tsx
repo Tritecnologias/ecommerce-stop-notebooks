@@ -617,7 +617,7 @@ function Index() {
                 </div>
               )}
             </>
-          )}}
+          )}
         </section>
       )}
 
