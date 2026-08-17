@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles, Truck, Shield, Star, Gift, Zap, Heart, Lock, Pack
 import { PRODUCTS, dbProductToProduct } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { useCart } from "@/lib/cart";
-import { getProducts } from "@/fns/products";
+import { getProducts, getProductsPaginated } from "@/fns/products";
 import { getActiveBanners } from "@/fns/banners";
 import { getHomeContent, DEFAULT_HOME, type TrustBadgeIcon } from "@/fns/home";
 import heroImg from "@/assets/hero.jpg";
@@ -81,9 +81,27 @@ function Index() {
   const [maxPreco, setMaxPreco] = useState("");
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 24;
+
+  const { data: paginatedData, isLoading: loadingProducts } = useQuery({
+    queryKey: ["products-paginated", page, selectedCategory, selectedTag, selectedForWhom, selectedExperience, sortBy],
+    queryFn: () => getProductsPaginated({
+      data: {
+        page,
+        limit: PAGE_SIZE,
+        category: selectedCategory || undefined,
+        tag: selectedTag || undefined,
+        forWhom: selectedForWhom || undefined,
+        experienceLevel: selectedExperience || undefined,
+        sort: sortBy,
+      },
+    }),
+    staleTime: 2 * 60 * 1000,
+  });
 
   const { data: dbProducts } = useQuery({
-    queryKey: ["products"],
+    queryKey: ["products-featured"],
     queryFn: () => getProducts(),
     staleTime: 5 * 60 * 1000,
   });
@@ -109,53 +127,30 @@ function Index() {
     if (products.length > 0) setProductsCache(products);
   }, [products]);
 
-  const bestsellers = products.filter((p) => p.tag === "Mais Vendido");
-  const novidades = products.filter((p) => p.tag === "Lançamento");
+  const bestsellers = products.filter((p) => p.tag === "Mais Vendido").slice(0, 6);
+  const novidades = products.filter((p) => p.tag === "Lançamento").slice(0, 6);
 
   const visibleCategories = c.categories.filter((cat) => cat.visible);
 
-  // Filtros avançados sobre a coleção
-  let collectionProducts = selectedCategory
-    ? products.filter((p) => p.category === selectedCategory)
+  // Produtos da coleção vêm paginados do servidor
+  const collectionProducts = paginatedData
+    ? paginatedData.products.map(dbProductToProduct)
     : products;
+  const totalProducts = paginatedData?.total ?? collectionProducts.length;
+  const totalPages = paginatedData?.totalPages ?? 1;
 
-  if (selectedTag) {
-    collectionProducts = collectionProducts.filter((p) => p.tag === selectedTag);
-  }
-  if (selectedForWhom) {
-    collectionProducts = collectionProducts.filter((p) => p.forWhom === selectedForWhom);
-  }
-  if (selectedExperience) {
-    collectionProducts = collectionProducts.filter((p) => p.experienceLevel === selectedExperience);
-  }
-  if (onlyInStock) {
-    collectionProducts = collectionProducts.filter((p) => (p.stock ?? 0) > 0);
-  }
+  // Filtros de preço e estoque aplicados client-side (sobre a página atual)
+  let filteredProducts = collectionProducts;
   const minP = minPreco !== "" ? parseFloat(minPreco) : null;
   const maxP = maxPreco !== "" ? parseFloat(maxPreco) : null;
   if (minP !== null && !isNaN(minP)) {
-    collectionProducts = collectionProducts.filter((p) => p.price >= minP);
+    filteredProducts = filteredProducts.filter((p) => p.price >= minP);
   }
   if (maxP !== null && !isNaN(maxP)) {
-    collectionProducts = collectionProducts.filter((p) => p.price <= maxP);
+    filteredProducts = filteredProducts.filter((p) => p.price <= maxP);
   }
-
-  // Ordenação
-  switch (sortBy) {
-    case "preco_asc":
-      collectionProducts = [...collectionProducts].sort((a, b) => a.price - b.price);
-      break;
-    case "preco_desc":
-      collectionProducts = [...collectionProducts].sort((a, b) => b.price - a.price);
-      break;
-    case "avaliacao":
-      collectionProducts = [...collectionProducts].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
-      break;
-    case "novidades":
-      collectionProducts = [...collectionProducts].sort(
-        (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime(),
-      );
-      break;
+  if (onlyInStock) {
+    filteredProducts = filteredProducts.filter((p) => (p.stock ?? 0) > 0);
   }
 
   const activeFilterCount =
@@ -175,9 +170,13 @@ function Index() {
     setMinPreco("");
     setMaxPreco("");
     setOnlyInStock(false);
+    setPage(1);
   }
 
   const heroImage = c.hero.imageUrl || heroImg;
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [selectedCategory, selectedTag, selectedForWhom, selectedExperience, sortBy]);
 
   return (
     <>
@@ -353,8 +352,8 @@ function Index() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Contador de resultados */}
           <p className="text-sm text-muted-foreground">
-            {collectionProducts.length}{" "}
-            {collectionProducts.length === 1 ? "produto" : "produtos"}
+            {totalProducts}{" "}
+            {totalProducts === 1 ? "produto" : "produtos"}
             {(selectedCategory || activeFilterCount > 0) && (
               <button
                 onClick={clearAllFilters}
@@ -574,7 +573,7 @@ function Index() {
               </button>
             )}
           </div>
-          {collectionProducts.length === 0 ? (
+          {filteredProducts.length === 0 && !loadingProducts ? (
             <div className="py-12 text-center">
               <Package className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
               <p className="text-muted-foreground text-sm">Nenhum produto encontrado com os filtros selecionados.</p>
@@ -583,12 +582,42 @@ function Index() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {collectionProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          )}
+            <>
+              {loadingProducts && (
+                <div className="py-8 text-center">
+                  <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-neon border-t-transparent" />
+                </div>
+              )}
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredProducts.map((p) => (
+                  <ProductCard key={p.id} product={p} />
+                ))}
+              </div>
+
+              {/* Paginação */}
+              {totalPages > 1 && (
+                <div className="mt-10 flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className="rounded-md border border-border px-4 py-2 text-sm font-medium disabled:opacity-30 hover:border-neon hover:text-neon transition-colors"
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="px-4 text-sm text-muted-foreground">
+                    Página {page} de {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className="rounded-md border border-border px-4 py-2 text-sm font-medium disabled:opacity-30 hover:border-neon hover:text-neon transition-colors"
+                  >
+                    Próxima →
+                  </button>
+                </div>
+              )}
+            </>
+          )}}
         </section>
       )}
 

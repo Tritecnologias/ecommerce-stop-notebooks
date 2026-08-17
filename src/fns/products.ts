@@ -28,10 +28,64 @@ export const getProducts = createServerFn().handler(async (): Promise<DbProduct[
     .from("products")
     .select("*")
     .eq("active", true)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(30);
   if (error) throw new Error(error.message);
   return (data ?? []) as DbProduct[];
 });
+
+export const getProductsPaginated = createServerFn()
+  .inputValidator((input: unknown) =>
+    z.object({
+      page: z.number().int().min(1).default(1),
+      limit: z.number().int().min(1).max(100).default(30),
+      category: z.string().optional(),
+      tag: z.string().optional(),
+      forWhom: z.string().optional(),
+      experienceLevel: z.string().optional(),
+      search: z.string().optional(),
+      sort: z.enum(["destaque", "preco_asc", "preco_desc", "avaliacao", "novidades"]).default("destaque"),
+    }).parse(input ?? {}),
+  )
+  .handler(async ({ data }): Promise<{ products: DbProduct[]; total: number; page: number; totalPages: number }> => {
+    const db = createSupabaseAdmin();
+    const offset = (data.page - 1) * data.limit;
+
+    let query = db
+      .from("products")
+      .select("*", { count: "exact" })
+      .eq("active", true);
+
+    if (data.category) query = query.eq("category", data.category);
+    if (data.tag) query = query.eq("tag", data.tag);
+    if (data.forWhom) query = query.eq("for_whom", data.forWhom);
+    if (data.experienceLevel) query = query.eq("experience_level", data.experienceLevel);
+    if (data.search) {
+      query = query.or(`name.ilike.%${data.search}%,category.ilike.%${data.search}%,short_description.ilike.%${data.search}%`);
+    }
+
+    // Ordenação
+    switch (data.sort) {
+      case "preco_asc": query = query.order("price", { ascending: true }); break;
+      case "preco_desc": query = query.order("price", { ascending: false }); break;
+      case "avaliacao": query = query.order("rating", { ascending: false }); break;
+      case "novidades": query = query.order("created_at", { ascending: false }); break;
+      default: query = query.order("created_at", { ascending: false });
+    }
+
+    query = query.range(offset, offset + data.limit - 1);
+
+    const { data: products, error, count } = await query;
+    if (error) throw new Error(error.message);
+
+    const total = count ?? 0;
+    return {
+      products: (products ?? []) as DbProduct[],
+      total,
+      page: data.page,
+      totalPages: Math.ceil(total / data.limit),
+    };
+  });});
 
 export const getProductBySlug = createServerFn()
   .inputValidator((slug: unknown) => z.string().parse(slug))
