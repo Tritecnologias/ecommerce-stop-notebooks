@@ -52,12 +52,18 @@ function tryServeStatic(req, res) {
   const url = new URL(req.url, `http://localhost`);
   const pathname = url.pathname;
 
-  // Only serve from /assets/ path (Vite output)
-  if (!pathname.startsWith("/assets/") && pathname !== "/favicon.ico") {
+  // Only serve from /assets/ path (Vite output) and /images/ (product images)
+  if (!pathname.startsWith("/assets/") && !pathname.startsWith("/images/") && pathname !== "/favicon.ico") {
     return false;
   }
 
-  const filePath = join(clientDir, pathname);
+  // /images/ serve from /data/product-images/
+  let filePath;
+  if (pathname.startsWith("/images/")) {
+    filePath = join("/data/product-images", pathname.replace("/images/", ""));
+  } else {
+    filePath = join(clientDir, pathname);
+  }
 
   try {
     if (!existsSync(filePath) || !statSync(filePath).isFile()) {

@@ -30,4 +30,7 @@ COPY --from=builder /app/server-entry.js .
 
 EXPOSE 3000
 
+# Diretório para imagens de produtos (montado como volume)
+RUN mkdir -p /data/product-images
+
 CMD ["node", "server-entry.js"]
