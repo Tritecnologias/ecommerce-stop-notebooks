@@ -85,7 +85,7 @@ export const getProductsPaginated = createServerFn()
       page: data.page,
       totalPages: Math.ceil(total / data.limit),
     };
-  });});
+  });
 
 export const getProductBySlug = createServerFn()
   .inputValidator((slug: unknown) => z.string().parse(slug))
