@@ -33,6 +33,7 @@ import { Route as AdminClientesIndexRouteImport } from './routes/admin/clientes/
 import { Route as AdminBannersIndexRouteImport } from './routes/admin/banners/index'
 import { Route as AdminAvaliacoesIndexRouteImport } from './routes/admin/avaliacoes/index'
 import { Route as AdminProdutosNovoRouteImport } from './routes/admin/produtos/novo'
+import { Route as AdminProdutosImportarRouteImport } from './routes/admin/produtos/importar'
 import { Route as AdminProdutosIdRouteImport } from './routes/admin/produtos/$id'
 import { Route as AdminPedidosIdRouteImport } from './routes/admin/pedidos/$id'
 import { Route as AdminCuponsNovoRouteImport } from './routes/admin/cupons/novo'
@@ -157,6 +158,11 @@ const AdminProdutosNovoRoute = AdminProdutosNovoRouteImport.update({
   path: '/admin/produtos/novo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminProdutosImportarRoute = AdminProdutosImportarRouteImport.update({
+  id: '/admin/produtos/importar',
+  path: '/admin/produtos/importar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProdutosIdRoute = AdminProdutosIdRouteImport.update({
   id: '/admin/produtos/$id',
   path: '/admin/produtos/$id',
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/admin/cupons/novo': typeof AdminCuponsNovoRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/importar': typeof AdminProdutosImportarRoute
   '/admin/produtos/novo': typeof AdminProdutosNovoRoute
   '/admin/avaliacoes/': typeof AdminAvaliacoesIndexRoute
   '/admin/banners/': typeof AdminBannersIndexRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/admin/cupons/novo': typeof AdminCuponsNovoRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/importar': typeof AdminProdutosImportarRoute
   '/admin/produtos/novo': typeof AdminProdutosNovoRoute
   '/admin/avaliacoes': typeof AdminAvaliacoesIndexRoute
   '/admin/banners': typeof AdminBannersIndexRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/admin/cupons/novo': typeof AdminCuponsNovoRoute
   '/admin/pedidos/$id': typeof AdminPedidosIdRoute
   '/admin/produtos/$id': typeof AdminProdutosIdRoute
+  '/admin/produtos/importar': typeof AdminProdutosImportarRoute
   '/admin/produtos/novo': typeof AdminProdutosNovoRoute
   '/admin/avaliacoes/': typeof AdminAvaliacoesIndexRoute
   '/admin/banners/': typeof AdminBannersIndexRoute
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/admin/cupons/novo'
     | '/admin/pedidos/$id'
     | '/admin/produtos/$id'
+    | '/admin/produtos/importar'
     | '/admin/produtos/novo'
     | '/admin/avaliacoes/'
     | '/admin/banners/'
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | '/admin/cupons/novo'
     | '/admin/pedidos/$id'
     | '/admin/produtos/$id'
+    | '/admin/produtos/importar'
     | '/admin/produtos/novo'
     | '/admin/avaliacoes'
     | '/admin/banners'
@@ -339,6 +350,7 @@ export interface FileRouteTypes {
     | '/admin/cupons/novo'
     | '/admin/pedidos/$id'
     | '/admin/produtos/$id'
+    | '/admin/produtos/importar'
     | '/admin/produtos/novo'
     | '/admin/avaliacoes/'
     | '/admin/banners/'
@@ -369,6 +381,7 @@ export interface RootRouteChildren {
   AdminCuponsNovoRoute: typeof AdminCuponsNovoRoute
   AdminPedidosIdRoute: typeof AdminPedidosIdRoute
   AdminProdutosIdRoute: typeof AdminProdutosIdRoute
+  AdminProdutosImportarRoute: typeof AdminProdutosImportarRoute
   AdminProdutosNovoRoute: typeof AdminProdutosNovoRoute
   AdminAvaliacoesIndexRoute: typeof AdminAvaliacoesIndexRoute
   AdminBannersIndexRoute: typeof AdminBannersIndexRoute
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProdutosNovoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/produtos/importar': {
+      id: '/admin/produtos/importar'
+      path: '/admin/produtos/importar'
+      fullPath: '/admin/produtos/importar'
+      preLoaderRoute: typeof AdminProdutosImportarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/produtos/$id': {
       id: '/admin/produtos/$id'
       path: '/admin/produtos/$id'
@@ -593,6 +613,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCuponsNovoRoute: AdminCuponsNovoRoute,
   AdminPedidosIdRoute: AdminPedidosIdRoute,
   AdminProdutosIdRoute: AdminProdutosIdRoute,
+  AdminProdutosImportarRoute: AdminProdutosImportarRoute,
   AdminProdutosNovoRoute: AdminProdutosNovoRoute,
   AdminAvaliacoesIndexRoute: AdminAvaliacoesIndexRoute,
   AdminBannersIndexRoute: AdminBannersIndexRoute,
