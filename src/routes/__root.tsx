@@ -16,7 +16,6 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
-import { AgeVerification } from "@/components/AgeVerification";
 import { BossMode } from "@/components/BossMode";
 import { Toaster } from "sonner";
 
@@ -66,7 +65,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Secret Desire — Prazer com discrição" },
       { property: "og:description", content: "Produtos eróticos selecionados. Embalagem discreta garantida." },
       { property: "og:type", content: "website" },
-      { name: "rating", content: "adult" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -107,7 +105,6 @@ function RootComponent() {
           </div>
           <CartDrawer />
           <WhatsAppFloat />
-          <AgeVerification />
           <BossMode />
           <Toaster richColors position="top-right" />
           </OrderNotifProvider>
