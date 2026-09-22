@@ -38,5 +38,20 @@ export const getProductImageUploadUrl = createServerFn()
 
     const { data: { publicUrl } } = db.storage.from(BUCKET).getPublicUrl(path);
 
-    return { uploadUrl: signed.signedUrl, publicUrl };
+    // Converte para rota relativa pelo proxy local /supabase/...
+    // Isso garante que tanto o PUT de upload quanto a exibição da imagem ocorram
+    // pela mesma origem da página (HTTPS), evitando bloqueios de Mixed Content.
+    const toProxyUrl = (fullUrl: string) => {
+      try {
+        const u = new URL(fullUrl);
+        return `/supabase${u.pathname}${u.search}`;
+      } catch {
+        return fullUrl;
+      }
+    };
+
+    return {
+      uploadUrl: toProxyUrl(signed.signedUrl),
+      publicUrl: toProxyUrl(publicUrl),
+    };
   });
