@@ -1,12 +1,15 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Save, Loader2, Plus, X, Truck, Shield, Star, Gift, Zap, Heart, Lock, Package, Award, Clock,
-  Eye, EyeOff, Home, Sparkles, ChevronDown, ChevronUp,
+  Eye, EyeOff, Home, Sparkles, ChevronDown, ChevronUp, UploadCloud, Image as ImageIcon,
+  ArrowRight, RotateCcw, Trash2, ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getHomeContent, updateHomeContent, DEFAULT_HOME, type HomeContent, type TrustBadgeIcon } from "@/fns/home";
+import { getProductImageUploadUrl } from "@/fns/storage";
+import heroImg from "@/assets/hero.jpg";
 import { AdminLayout } from "@/routes/admin/index";
 import { toast } from "sonner";
 
@@ -123,6 +126,45 @@ function AdminHome() {
     setContent((prev) => ({ ...prev, sections: { ...prev.sections, ...patch } }));
   }, []);
 
+  const [uploadingHero, setUploadingHero] = useState(false);
+  const heroFileRef = useRef<HTMLInputElement>(null);
+
+  const handleHeroUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione um arquivo de imagem.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("A imagem não pode ultrapassar 10MB.");
+      return;
+    }
+
+    setUploadingHero(true);
+    try {
+      const { uploadUrl, publicUrl } = await getProductImageUploadUrl({
+        data: {
+          fileName: file.name,
+          contentType: file.type,
+        },
+      });
+
+      const res = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!res.ok) throw new Error(`Falha no upload (Status ${res.status})`);
+
+      setHero({ imageUrl: publicUrl });
+      toast.success("Imagem do Hero enviada com sucesso!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro no envio da imagem.");
+    } finally {
+      setUploadingHero(false);
+    }
+  };
+
   const saveMut = useMutation({
     mutationFn: () => updateHomeContent({ data: content }),
     onSuccess: () => {
@@ -136,6 +178,19 @@ function AdminHome() {
 
   return (
     <AdminLayout title="Página Inicial">
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          Personalize a seção de destaque (Hero Banner), textos, botões e imagens da tela principal da loja.
+        </p>
+        <Link
+          to="/"
+          target="_blank"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-neon hover:underline flex-none"
+        >
+          Ver loja ao vivo <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
       {isLoading ? (
         <div className="flex items-center gap-2 py-12 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Carregando conteúdo…
@@ -209,64 +264,247 @@ function AdminHome() {
           </Section>
 
           {/* ── Hero ── */}
-          <Section title="🖼️ Hero — seção principal">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Field label="Badge (etiqueta sobre o título)">
-                <input value={content.hero.badge} onChange={(e) => setHero({ badge: e.target.value })} placeholder="Nova coleção 2026" className={inputCls} />
-              </Field>
-              <Field label="Texto antes do destaque" hint="Ex: 'Aromas que'">
-                <input value={content.hero.headingPre} onChange={(e) => setHero({ headingPre: e.target.value })} className={inputCls} />
-              </Field>
-              <Field label="Palavra em destaque (neon)" hint="Ex: 'marcam'">
-                <input value={content.hero.headingHighlight} onChange={(e) => setHero({ headingHighlight: e.target.value })} className={inputCls} />
-              </Field>
+          <Section title="🖼️ Hero Banner — Destaque principal da loja" defaultOpen={true}>
+            <p className="text-xs text-muted-foreground -mt-1 mb-2">
+              Gerencie a imagem principal, o título com destaque neon, badge e botões de chamada para ação.
+            </p>
+
+            {/* ── PRÉ-VISUALIZAÇÃO AO VIVO (Réplica exata da loja) ── */}
+            <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-b from-background via-background to-secondary/30 p-6 md:p-8 shadow-inner">
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-neon" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    Pré-visualização em Tempo Real (Como os clientes veem)
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  Atualização instantânea
+                </span>
+              </div>
+
+              <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+                <div>
+                  {content.hero.badge && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-neon/40 bg-neon/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-neon">
+                      <Sparkles className="h-3 w-3" /> {content.hero.badge}
+                    </span>
+                  )}
+                  <h2 className="mt-4 font-display text-3xl font-bold leading-tight md:text-5xl tracking-tight">
+                    {content.hero.headingPre}{content.hero.headingPre ? " " : ""}
+                    <span className="neon-text text-neon">{content.hero.headingHighlight}</span>
+                    {content.hero.headingPost.split("\\n").map((part, i) =>
+                      i === 0 ? part : <><br key={i} />{part}</>
+                    )}
+                  </h2>
+                  <p className="mt-4 text-sm text-muted-foreground max-w-md leading-relaxed">
+                    {content.hero.description || "Descrição do seu negócio e proposta de valor."}
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center gap-3">
+                    {content.hero.primaryBtnText && (
+                      <span className="inline-flex items-center gap-2 rounded-md bg-neon px-5 py-2.5 font-display text-xs font-bold text-primary-foreground shadow-lg shadow-neon/20">
+                        {content.hero.primaryBtnText} <ArrowRight className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                    {content.hero.secondaryBtnText && (
+                      <span className="inline-flex items-center rounded-md border border-border bg-card/60 px-5 py-2.5 font-display text-xs font-semibold text-foreground">
+                        {content.hero.secondaryBtnText}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Imagem do Hero */}
+                <div className="relative">
+                  <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-tr from-card to-secondary/30 p-2 shadow-2xl">
+                    <img
+                      src={content.hero.imageUrl || heroImg}
+                      alt={content.hero.imageAlt || "Hero"}
+                      className="aspect-[4/3] w-full rounded-xl object-cover"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <Field label="Texto após o destaque" hint="Use \\n para quebra de linha. Ex: '.\\nEntrega rápida.'">
-              <input value={content.hero.headingPost} onChange={(e) => setHero({ headingPost: e.target.value })} className={inputCls} />
-            </Field>
+            {/* ── UPLOAD DA IMAGEM DO HERO ── */}
+            <div className="rounded-lg border border-border/70 bg-card/60 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-sm flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4 text-neon" />
+                    Imagem Principal do Hero
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Faça upload da imagem de destaque da sua loja (PNG, JPG, WebP de alta resolução).
+                  </p>
+                </div>
 
-            <Field label="Descrição">
-              <textarea value={content.hero.description} onChange={(e) => setHero({ description: e.target.value })} rows={3} className={textareaCls} />
-            </Field>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Botão principal — texto">
-                <input value={content.hero.primaryBtnText} onChange={(e) => setHero({ primaryBtnText: e.target.value })} placeholder="Ver coleção" className={inputCls} />
-              </Field>
-              <Field label="Botão principal — URL">
-                <input value={content.hero.primaryBtnUrl} onChange={(e) => setHero({ primaryBtnUrl: e.target.value })} placeholder="#colecao" className={inputCls} />
-              </Field>
-              <Field label="Botão secundário — texto">
-                <input value={content.hero.secondaryBtnText} onChange={(e) => setHero({ secondaryBtnText: e.target.value })} placeholder="Mais vendidos" className={inputCls} />
-              </Field>
-              <Field label="Botão secundário — URL">
-                <input value={content.hero.secondaryBtnUrl} onChange={(e) => setHero({ secondaryBtnUrl: e.target.value })} placeholder="#bestsellers" className={inputCls} />
-              </Field>
-            </div>
-
-            <Field label="URL da imagem do hero" hint="Deixe vazio para usar a imagem padrão do projeto">
-              <input value={content.hero.imageUrl} onChange={(e) => setHero({ imageUrl: e.target.value })} placeholder="https://..." className={inputCls} />
-            </Field>
-
-            {content.hero.imageUrl && (
-              <img src={content.hero.imageUrl} alt="Preview" className="h-32 w-full rounded-lg object-cover border border-border" />
-            )}
-
-            <Field label="Alt text da imagem (acessibilidade / SEO)">
-              <input value={content.hero.imageAlt} onChange={(e) => setHero({ imageAlt: e.target.value })} placeholder="Secret Desire - Sex Shop Online" className={inputCls} />
-            </Field>
-
-            {/* Preview do título */}
-            <div className="rounded-md border border-border bg-secondary/20 p-4">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Pré-visualização do título</p>
-              <p className="font-display text-2xl font-bold leading-tight">
-                {content.hero.headingPre}{" "}
-                <span className="text-[oklch(0.92_0.27_142)]">{content.hero.headingHighlight}</span>
-                {content.hero.headingPost.split("\\n").map((part, i) =>
-                  i === 0 ? part : <><br key={i} />{part}</>
+                {content.hero.imageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setHero({ imageUrl: "" })}
+                    className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition cursor-pointer"
+                    title="Voltar para a imagem padrão"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Restaurar imagem padrão
+                  </button>
                 )}
-              </p>
+              </div>
+
+              <div
+                onClick={() => heroFileRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (e.dataTransfer.files?.[0]) handleHeroUpload(e.dataTransfer.files[0]);
+                }}
+                className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 text-center transition cursor-pointer ${
+                  uploadingHero
+                    ? "border-neon bg-neon/5 opacity-80"
+                    : "border-border hover:border-neon hover:bg-secondary/30"
+                }`}
+              >
+                {uploadingHero ? (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin text-neon mb-2" />
+                    <p className="text-sm font-semibold">Fazendo upload da imagem do hero...</p>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="h-6 w-6 text-neon mb-2" />
+                    <p className="text-sm font-semibold">
+                      Clique para selecionar ou arraste uma nova imagem para o Hero
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {content.hero.imageUrl
+                        ? "Uma imagem customizada está ativa. Clique para substituir."
+                        : "Atualmente usando a imagem padrão. Clique para trocar."}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <input
+                ref={heroFileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/avif"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleHeroUpload(e.target.files[0]);
+                }}
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2 pt-1">
+                <Field label="URL da imagem (opcional/alternativa)" hint="Ou cole diretamente o link de uma imagem externa">
+                  <input
+                    value={content.hero.imageUrl}
+                    onChange={(e) => setHero({ imageUrl: e.target.value })}
+                    placeholder="https://..."
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Texto Alternativo (Alt / SEO)" hint="Descreva a imagem para o Google">
+                  <input
+                    value={content.hero.imageAlt}
+                    onChange={(e) => setHero({ imageAlt: e.target.value })}
+                    placeholder="Ex: Stop Notebooks - Loja Online"
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            {/* ── TEXTOS E CHAMADAS ── */}
+            <div className="space-y-3 pt-2">
+              <h4 className="font-semibold text-sm">Textos e Chamadas do Título</h4>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field label="Badge (etiqueta acima do título)" hint="Ex: 'NOVIDADES 2026'">
+                  <input
+                    value={content.hero.badge}
+                    onChange={(e) => setHero({ badge: e.target.value })}
+                    placeholder="NOVIDADES 2026"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Texto antes do destaque" hint="Ex: 'Prazer com'">
+                  <input
+                    value={content.hero.headingPre}
+                    onChange={(e) => setHero({ headingPre: e.target.value })}
+                    placeholder="Prazer com"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Palavra em destaque (Neon)" hint="Ficará verde com brilho neon">
+                  <input
+                    value={content.hero.headingHighlight}
+                    onChange={(e) => setHero({ headingHighlight: e.target.value })}
+                    placeholder="discrição"
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
+
+              <Field
+                label="Texto após o destaque"
+                hint="Use \n para quebrar linha. Ex: '.\nEntrega sigilosa.'"
+              >
+                <input
+                  value={content.hero.headingPost}
+                  onChange={(e) => setHero({ headingPost: e.target.value })}
+                  placeholder=".\nEntrega sigilosa."
+                  className={inputCls}
+                />
+              </Field>
+
+              <Field label="Descrição detalhada">
+                <textarea
+                  value={content.hero.description}
+                  onChange={(e) => setHero({ description: e.target.value })}
+                  rows={3}
+                  className={textareaCls}
+                />
+              </Field>
+            </div>
+
+            {/* ── BOTÕES DE AÇÃO ── */}
+            <div className="space-y-3 pt-2">
+              <h4 className="font-semibold text-sm">Botões de Ação (CTAs)</h4>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Botão principal — Texto">
+                  <input
+                    value={content.hero.primaryBtnText}
+                    onChange={(e) => setHero({ primaryBtnText: e.target.value })}
+                    placeholder="VER PRODUTOS"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Botão principal — Link / URL">
+                  <input
+                    value={content.hero.primaryBtnUrl}
+                    onChange={(e) => setHero({ primaryBtnUrl: e.target.value })}
+                    placeholder="#colecao"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Botão secundário — Texto">
+                  <input
+                    value={content.hero.secondaryBtnText}
+                    onChange={(e) => setHero({ secondaryBtnText: e.target.value })}
+                    placeholder="Mais vendidos"
+                    className={inputCls}
+                  />
+                </Field>
+                <Field label="Botão secundário — Link / URL">
+                  <input
+                    value={content.hero.secondaryBtnUrl}
+                    onChange={(e) => setHero({ secondaryBtnUrl: e.target.value })}
+                    placeholder="#bestsellers"
+                    className={inputCls}
+                  />
+                </Field>
+              </div>
             </div>
           </Section>
 
