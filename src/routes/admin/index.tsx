@@ -8,13 +8,14 @@ import {
 import {
   Package, ShoppingBag, DollarSign, Clock, LayoutDashboard, PackageSearch,
   ChevronRight, Tag, Settings, Users, AlertTriangle, Image, Home, Star,
-  BarChart2, TrendingUp, TrendingDown, Minus, Award, ReceiptText,
+  BarChart2, TrendingUp, TrendingDown, Minus, Award, ReceiptText, Palette,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useOrderNotif } from "@/lib/order-notifications";
 import { getAdminOrders } from "@/fns/orders";
 import { getAdminProducts } from "@/fns/products";
 import { getDashboardStats } from "@/fns/analytics";
+import { getActiveLogos } from "@/fns/logos";
 import { formatBRL } from "@/lib/cart";
 
 export const Route = createFileRoute("/admin/")({
@@ -410,14 +411,31 @@ export function AdminLayout({ title, children }: { title: string; children: Reac
     queryFn: () => getAdminProducts(),
     staleTime: 2 * 60 * 1000,
   });
+  const { data: activeLogos } = useQuery({
+    queryKey: ["active-logos"],
+    queryFn: () => getActiveLogos(),
+    staleTime: 60 * 1000,
+  });
+  const adminLogo = activeLogos?.admin || activeLogos?.header;
   const criticalCount = (products ?? []).filter((p) => p.active && p.stock < 5).length;
   return (
     <div className="flex min-h-screen">
       <aside className="fixed left-0 top-0 z-30 flex h-full w-60 flex-col border-r border-border bg-background/95 pt-6">
         <div className="px-5 pb-6">
           <Link to="/" className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-neon glow" />
-            <span className="font-display text-sm font-bold">Secret Desire</span>
+            {adminLogo ? (
+              <img
+                src={adminLogo.url}
+                alt={adminLogo.alt_text || "Logotipo"}
+                style={{ maxHeight: `${Math.min(adminLogo.height || 32, 36)}px` }}
+                className="object-contain"
+              />
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-neon glow" />
+                <span className="font-display text-sm font-bold">Secret Desire</span>
+              </>
+            )}
           </Link>
           <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Admin</p>
         </div>
@@ -431,6 +449,7 @@ export function AdminLayout({ title, children }: { title: string; children: Reac
           <SideLink to="/admin/avaliacoes" icon={Star} label="Avaliações" />
           <SideLink to="/admin/relatorio" icon={BarChart2} label="Relatório" />
           <SideLink to="/admin/banners" icon={Image} label="Banners" />
+          <SideLink to="/admin/logotipos" icon={Palette} label="Logotipos" />
           <SideLink to="/admin/configuracoes" icon={Settings} label="Configurações" />
         </nav>
         <div className="border-t border-border px-5 py-4">

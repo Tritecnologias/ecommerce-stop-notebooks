@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -18,6 +19,7 @@ import { Footer } from "@/components/Footer";
 import { WhatsAppFloat } from "@/components/WhatsAppFloat";
 import { BossMode } from "@/components/BossMode";
 import { Toaster } from "sonner";
+import { getActiveLogos } from "@/fns/logos";
 
 function NotFoundComponent() {
   return (
@@ -91,10 +93,33 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function DynamicFavicon() {
+  const { data: activeLogos } = useQuery({
+    queryKey: ["active-logos"],
+    queryFn: () => getActiveLogos(),
+    staleTime: 60 * 1000,
+  });
+  const favicon = activeLogos?.favicon;
+
+  useEffect(() => {
+    if (!favicon?.url || typeof document === "undefined") return;
+    let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.href = favicon.url;
+  }, [favicon?.url]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <DynamicFavicon />
       <AuthProvider>
         <CartProvider>
           <OrderNotifProvider>

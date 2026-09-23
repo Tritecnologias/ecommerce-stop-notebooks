@@ -1,15 +1,35 @@
 import { ShieldCheck, Truck, CreditCard, Lock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { STORE } from "@/lib/store";
+import { getActiveLogos } from "@/fns/logos";
 
 export function Footer() {
+  const { data: activeLogos } = useQuery({
+    queryKey: ["active-logos"],
+    queryFn: () => getActiveLogos(),
+    staleTime: 60 * 1000,
+  });
+  const footerLogo = activeLogos?.footer || activeLogos?.header;
+
   return (
     <footer className="mt-24 border-t border-border bg-card/40">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid gap-10 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-block h-2.5 w-2.5 rounded-full bg-neon glow" />
-              <span className="font-display text-lg font-bold">{STORE.name.toUpperCase()}</span>
+              {footerLogo ? (
+                <img
+                  src={footerLogo.url}
+                  alt={footerLogo.alt_text || STORE.name}
+                  style={{ maxHeight: `${Math.min(footerLogo.height || 36, 48)}px` }}
+                  className="object-contain"
+                />
+              ) : (
+                <>
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-neon glow" />
+                  <span className="font-display text-lg font-bold">{STORE.name.toUpperCase()}</span>
+                </>
+              )}
             </div>
             <p className="mt-3 text-sm text-muted-foreground">{STORE.tagline}</p>
           </div>

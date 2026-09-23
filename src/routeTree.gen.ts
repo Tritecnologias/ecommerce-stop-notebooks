@@ -26,6 +26,7 @@ import { Route as ContaFavoritosRouteImport } from './routes/conta/favoritos'
 import { Route as AdminRelatorioIndexRouteImport } from './routes/admin/relatorio/index'
 import { Route as AdminProdutosIndexRouteImport } from './routes/admin/produtos/index'
 import { Route as AdminPedidosIndexRouteImport } from './routes/admin/pedidos/index'
+import { Route as AdminLogotiposIndexRouteImport } from './routes/admin/logotipos/index'
 import { Route as AdminHomeIndexRouteImport } from './routes/admin/home/index'
 import { Route as AdminCuponsIndexRouteImport } from './routes/admin/cupons/index'
 import { Route as AdminConfiguracoesIndexRouteImport } from './routes/admin/configuracoes/index'
@@ -123,6 +124,11 @@ const AdminPedidosIndexRoute = AdminPedidosIndexRouteImport.update({
   path: '/admin/pedidos/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminLogotiposIndexRoute = AdminLogotiposIndexRouteImport.update({
+  id: '/admin/logotipos/',
+  path: '/admin/logotipos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminHomeIndexRoute = AdminHomeIndexRouteImport.update({
   id: '/admin/home/',
   path: '/admin/home/',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/admin/configuracoes/': typeof AdminConfiguracoesIndexRoute
   '/admin/cupons/': typeof AdminCuponsIndexRoute
   '/admin/home/': typeof AdminHomeIndexRoute
+  '/admin/logotipos/': typeof AdminLogotiposIndexRoute
   '/admin/pedidos/': typeof AdminPedidosIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
   '/admin/relatorio/': typeof AdminRelatorioIndexRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/admin/configuracoes': typeof AdminConfiguracoesIndexRoute
   '/admin/cupons': typeof AdminCuponsIndexRoute
   '/admin/home': typeof AdminHomeIndexRoute
+  '/admin/logotipos': typeof AdminLogotiposIndexRoute
   '/admin/pedidos': typeof AdminPedidosIndexRoute
   '/admin/produtos': typeof AdminProdutosIndexRoute
   '/admin/relatorio': typeof AdminRelatorioIndexRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/admin/configuracoes/': typeof AdminConfiguracoesIndexRoute
   '/admin/cupons/': typeof AdminCuponsIndexRoute
   '/admin/home/': typeof AdminHomeIndexRoute
+  '/admin/logotipos/': typeof AdminLogotiposIndexRoute
   '/admin/pedidos/': typeof AdminPedidosIndexRoute
   '/admin/produtos/': typeof AdminProdutosIndexRoute
   '/admin/relatorio/': typeof AdminRelatorioIndexRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes/'
     | '/admin/cupons/'
     | '/admin/home/'
+    | '/admin/logotipos/'
     | '/admin/pedidos/'
     | '/admin/produtos/'
     | '/admin/relatorio/'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes'
     | '/admin/cupons'
     | '/admin/home'
+    | '/admin/logotipos'
     | '/admin/pedidos'
     | '/admin/produtos'
     | '/admin/relatorio'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/admin/configuracoes/'
     | '/admin/cupons/'
     | '/admin/home/'
+    | '/admin/logotipos/'
     | '/admin/pedidos/'
     | '/admin/produtos/'
     | '/admin/relatorio/'
@@ -389,6 +401,7 @@ export interface RootRouteChildren {
   AdminConfiguracoesIndexRoute: typeof AdminConfiguracoesIndexRoute
   AdminCuponsIndexRoute: typeof AdminCuponsIndexRoute
   AdminHomeIndexRoute: typeof AdminHomeIndexRoute
+  AdminLogotiposIndexRoute: typeof AdminLogotiposIndexRoute
   AdminPedidosIndexRoute: typeof AdminPedidosIndexRoute
   AdminProdutosIndexRoute: typeof AdminProdutosIndexRoute
   AdminRelatorioIndexRoute: typeof AdminRelatorioIndexRoute
@@ -515,6 +528,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPedidosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/logotipos/': {
+      id: '/admin/logotipos/'
+      path: '/admin/logotipos'
+      fullPath: '/admin/logotipos/'
+      preLoaderRoute: typeof AdminLogotiposIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/home/': {
       id: '/admin/home/'
       path: '/admin/home'
@@ -621,6 +641,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminConfiguracoesIndexRoute: AdminConfiguracoesIndexRoute,
   AdminCuponsIndexRoute: AdminCuponsIndexRoute,
   AdminHomeIndexRoute: AdminHomeIndexRoute,
+  AdminLogotiposIndexRoute: AdminLogotiposIndexRoute,
   AdminPedidosIndexRoute: AdminPedidosIndexRoute,
   AdminProdutosIndexRoute: AdminProdutosIndexRoute,
   AdminRelatorioIndexRoute: AdminRelatorioIndexRoute,

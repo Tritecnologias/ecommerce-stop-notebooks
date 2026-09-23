@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { QrCode, CreditCard, FileText, Save, Loader2, Truck, FlaskConical, Zap, TriangleAlert, Package2, Eye, EyeOff, Wifi, WifiOff, CheckCircle2, MessageCircle, Bell, Star } from "lucide-react";
+import { QrCode, CreditCard, FileText, Save, Loader2, Truck, FlaskConical, Zap, TriangleAlert, Package2, Eye, EyeOff, Wifi, WifiOff, CheckCircle2, MessageCircle, Bell, Star, Palette, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getStoreSettings, updateStoreSettings, getShippingConfig, updateShippingConfig, getTestMode, updateTestMode, getInventorySettings, updateInventorySettings, type InventorySettings } from "@/fns/settings";
 import { getLoyaltyConfig, updateLoyaltyConfig, type LoyaltyConfig } from "@/fns/loyalty";
@@ -259,6 +259,27 @@ function AdminConfig() {
   return (
     <AdminLayout title="Configurações">
       <div className="max-w-3xl space-y-6">
+
+        {/* Identidade Visual & Logotipos */}
+        <div className="rounded-lg border border-neon/30 bg-card p-5 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Palette className="h-5 w-5 text-neon" />
+                <h2 className="font-display font-bold">Identidade Visual & Logotipos</h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Faça upload dos logotipos da sua marca e configure a exibição no cabeçalho, rodapé e aba do navegador.
+              </p>
+            </div>
+            <Link
+              to="/admin/logotipos"
+              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-neon px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-neon/90 transition flex-none"
+            >
+              Gerenciar Logotipos <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
 
         {/* Formas de pagamento */}
         <div className="rounded-lg border border-border bg-card p-5">
