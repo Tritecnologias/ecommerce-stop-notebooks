@@ -21,8 +21,8 @@ export function Footer() {
                 <img
                   src={footerLogo.url}
                   alt={footerLogo.alt_text || STORE.name}
-                  style={{ maxHeight: `${Math.min(footerLogo.height || 36, 48)}px` }}
-                  className="object-contain"
+                  style={{ maxHeight: `${footerLogo.height || 48}px` }}
+                  className="object-contain w-auto"
                 />
               ) : (
                 <>

@@ -43,14 +43,14 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:px-6">
+      <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-4 px-4 py-2 md:px-6">
         <Link to="/" className="flex items-center gap-2">
           {headerLogo ? (
             <img
               src={headerLogo.url}
               alt={headerLogo.alt_text || STORE.name}
-              style={{ maxHeight: `${Math.min(headerLogo.height || 40, 52)}px` }}
-              className="object-contain"
+              style={{ maxHeight: `${headerLogo.height || 48}px` }}
+              className="object-contain w-auto transition-all"
             />
           ) : (
             <>

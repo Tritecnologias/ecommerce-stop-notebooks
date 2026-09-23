@@ -457,7 +457,7 @@ export function AdminLogosPage() {
 
                   {/* Área de Visualização da Imagem */}
                   <div
-                    className={`flex h-44 items-center justify-center p-6 relative overflow-hidden transition-colors ${
+                    className={`flex min-h-48 h-auto items-center justify-center p-6 relative overflow-hidden transition-colors ${
                       contrast === "light"
                         ? "bg-neutral-100"
                         : contrast === "grid"
@@ -468,7 +468,7 @@ export function AdminLogosPage() {
                     <img
                       src={logo.url}
                       alt={logo.alt_text || logo.name}
-                      style={{ maxHeight: `${Math.min(logo.height || 40, 100)}px` }}
+                      style={{ maxHeight: `${Math.min(logo.height || 40, 180)}px` }}
                       className="max-w-full object-contain transition-transform group-hover:scale-105 duration-200"
                     />
                   </div>
@@ -637,12 +637,12 @@ export function AdminLogosPage() {
 
               {formUrl ? (
                 <div className="rounded-lg border border-border bg-secondary/30 p-4">
-                  <div className="flex items-center justify-center p-4 bg-background/80 rounded border border-border/40 min-h-[100px] mb-3">
+                  <div className="flex items-center justify-center p-4 bg-background/80 rounded border border-border/40 min-h-[140px] max-h-[260px] overflow-hidden mb-3">
                     <img
                       src={formUrl}
                       alt="Prévia do logotipo"
-                      style={{ maxHeight: `${formHeight}px` }}
-                      className="object-contain"
+                      style={{ maxHeight: `${Math.min(formHeight, 220)}px` }}
+                      className="object-contain w-auto transition-all"
                     />
                   </div>
                   <div className="flex items-center justify-between">
@@ -755,12 +755,25 @@ export function AdminLogosPage() {
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Altura de Exibição (px)
                 </label>
-                <span className="font-mono text-xs font-bold text-neon">{formHeight}px</span>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={16}
+                    max={250}
+                    value={formHeight}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) setFormHeight(Math.max(16, Math.min(250, val)));
+                    }}
+                    className="w-16 h-7 rounded border border-border bg-background px-2 text-center text-xs font-mono font-bold text-neon focus:border-neon focus:outline-none"
+                  />
+                  <span className="text-xs text-muted-foreground font-mono">px</span>
+                </div>
               </div>
               <input
                 type="range"
                 min={20}
-                max={90}
+                max={220}
                 step={2}
                 value={formHeight}
                 onChange={(e) => setFormHeight(Number(e.target.value))}
@@ -768,8 +781,29 @@ export function AdminLogosPage() {
               />
               <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                 <span>Discreto (20px)</span>
-                <span>Padrão (36 - 44px)</span>
-                <span>Destaque (90px)</span>
+                <span>Padrão (48px)</span>
+                <span>Médio (90px)</span>
+                <span>Grande (140px)</span>
+                <span>Destaque (220px)</span>
+              </div>
+
+              {/* Botões rápidos de altura */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                <span className="text-[11px] text-muted-foreground mr-1">Atalhos rápidos:</span>
+                {[36, 48, 64, 90, 120, 160, 200].map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => setFormHeight(h)}
+                    className={`rounded px-2 py-0.5 text-[11px] font-mono transition cursor-pointer ${
+                      formHeight === h
+                        ? "bg-neon text-primary-foreground font-bold"
+                        : "bg-secondary/70 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
+                  >
+                    {h}px
+                  </button>
+                ))}
               </div>
             </div>
 

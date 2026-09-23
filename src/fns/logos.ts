@@ -29,7 +29,7 @@ const LogoWriteSchema = z.object({
   url: z.string().min(1, "URL da imagem é obrigatória"),
   placement: z.enum(["header", "footer", "favicon", "admin", "all"]),
   active: z.boolean().default(true),
-  height: z.number().int().min(16).max(200).default(40),
+  height: z.number().int().min(16).max(250).default(40),
   alt_text: z.string().optional().default(""),
 });
 
